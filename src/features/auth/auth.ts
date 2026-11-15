@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { crefitoNumberSchema, crefitoRegionSchema } from "../../types/care.ts";
 
 export const userSchema = z.object({ id: z.string().uuid(), email: z.string().email(), role: z.enum(["PATIENT", "PROFESSIONAL"]) });
 export type User = z.infer<typeof userSchema>;
@@ -10,7 +11,17 @@ export const registrationSchema = credentialsSchema.extend({
   full_name: z.string().trim().min(1, "Informe seu nome.").max(200),
   role: z.enum(["PATIENT", "PROFESSIONAL"]),
   confirmation: z.string(),
-}).refine((data) => data.password === data.confirmation, { path: ["confirmation"], message: "As senhas não coincidem." });
+  crefito_region: z.number().optional(),
+  crefito_number: z.string().optional(),
+}).refine((data) => data.password === data.confirmation, { path: ["confirmation"], message: "As senhas não coincidem." }).superRefine((data, context) => {
+  if (data.role !== "PROFESSIONAL") return;
+  for (const [field, result] of [
+    ["crefito_region", crefitoRegionSchema.safeParse(data.crefito_region)],
+    ["crefito_number", crefitoNumberSchema.safeParse(data.crefito_number)],
+  ] as const) {
+    if (!result.success) context.addIssue({ code: "custom", path: [field], message: result.error.issues[0].message });
+  }
+});
 
 export class AuthError extends Error {
   constructor(public status: number, message: string) { super(message); }

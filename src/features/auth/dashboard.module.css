@@ -9,4 +9,6 @@
 .account dt { font-size: .75rem; color: var(--color-tertiary); margin-bottom: .25rem; }
 .account dd { font-size: .875rem; margin: 0 0 1rem; overflow-wrap: anywhere; }
 .account dd:last-child { margin-bottom: 0; }
+.links { display: grid; gap: .5rem; margin-top: 1.5rem; }
+.links a { display: flex; align-items: center; min-height: 2.75rem; font-weight: 600; }
 @media (max-width: 800px) { .layout { grid-template-columns: 1fr; } }

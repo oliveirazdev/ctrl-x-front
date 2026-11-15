@@ -14,7 +14,7 @@ export function AppShell({ children }: { children: ReactNode }) {
  <Link href="/" aria-current={pathname === "/" ? "page" : undefined}>Início</Link>
  {!protectedArea && <Link href="/login" aria-current={pathname === "/login" ? "page" : undefined}>Entrar</Link>}
  {!protectedArea && <Link className={styles.navAction} href="/register" aria-current={pathname === "/register" ? "page" : undefined}>Criar conta</Link>}
- {protectedArea && <Link href={pathname} aria-current="page">Meu espaço</Link>}
+ {protectedArea && <Link href={pathname.startsWith("/patient/") ? "/patient/dashboard" : "/professional/dashboard"} aria-current={pathname.endsWith("/dashboard") ? "page" : undefined}>Meu espaço</Link>}
  </nav></header>
  <main className={styles.main} id="conteudo" tabIndex={-1}>{children}</main>
  <footer className={styles.footer}><span>Ctrl X · Acompanhamento de saúde</span><span>Ambiente de desenvolvimento</span></footer>
