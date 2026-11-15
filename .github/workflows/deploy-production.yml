@@ -4,6 +4,7 @@ on:
     branches: [prod]
 permissions:
   contents: read
+  actions: read
 concurrency:
   group: frontend-production
   cancel-in-progress: false
@@ -28,15 +29,19 @@ jobs:
     steps:
       - name: Validate required configuration
         shell: bash
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
           set -euo pipefail
-          for name in VERCEL_ORG_ID; do
-            if [[ -z "${!name}" ]]; then
-              echo "::error::Missing required GitHub secret $name. Configure Settings > Environments > production > Environment secrets in this repository."
-              exit 1
-            fi
-          done
-          node -e 'try { const u = new URL(process.env.PRODUCTION_URL); if (u.protocol !== "https:" || u.username || u.password || u.pathname !== "/" || u.search || u.hash) throw Error(); } catch { console.error("::error::Set production variable PRODUCTION_URL to the canonical HTTPS origin."); process.exit(1); }'
+          if [[ -z "$VERCEL_TOKEN" ]]; then
+            echo '::error::VERCEL_TOKEN is unavailable. Set it as an environment secret in Settings > Environments > production > Environment secrets.'
+            exit 1
+          fi
+          if [[ -z "$VERCEL_ORG_ID" ]]; then
+            echo '::error::VERCEL_ORG_ID is unavailable. Set it as an environment secret in Settings > Environments > production.'
+            exit 1
+          fi
+          node scripts/validate-production-config.mjs
       - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
@@ -49,12 +54,21 @@ jobs:
       - name: Pull Vercel production configuration
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-        run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+        run: |
+          if [[ -z "$VERCEL_TOKEN" ]]; then
+            echo '::error::VERCEL_TOKEN is unavailable. Set it as an environment secret in Settings > Environments > production.'
+            exit 1
+          fi
+          vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
       - name: Validate linked project and Production API configuration
         run: |
           node <<'NODE'
           const fs = require('node:fs');
           const { loadEnvConfig } = require('@next/env');
+          if (!fs.existsSync('.vercel/project.json')) {
+            console.error('::error::Vercel configuration is missing after vercel pull. Check VERCEL_TOKEN, VERCEL_ORG_ID and project access.');
+            process.exit(1);
+          }
           const project = JSON.parse(fs.readFileSync('.vercel/project.json', 'utf8'));
           const config = JSON.parse(fs.readFileSync('vercel.json', 'utf8'));
           if (project.projectId !== process.env.VERCEL_PROJECT_ID || project.orgId !== process.env.VERCEL_ORG_ID) {
@@ -81,13 +95,28 @@ jobs:
           loadEnvConfig('.vercel', false, { info() {}, error() {} });
           try {
             const api = new URL(process.env.NEXT_PUBLIC_API_URL);
-            if (api.protocol !== 'https:' || api.username || api.password || api.pathname !== '/api/v1' || api.search || api.hash || ['localhost', '127.0.0.1', '[::1]'].includes(api.hostname)) throw Error();
-            if (process.env.NEXT_PUBLIC_API_BASE_URL !== process.env.NEXT_PUBLIC_API_URL) throw Error();
+            const base = new URL(process.env.NEXT_PUBLIC_API_BASE_URL);
+            const isLocal = (url) => ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname);
+            if (!process.env.NEXT_PUBLIC_API_URL || !process.env.NEXT_PUBLIC_API_BASE_URL) throw new Error('missing');
+            if (api.protocol !== 'https:' || api.pathname.replace(/\/$/, '') !== '/api/v1' || api.username || api.password || api.search || api.hash || isLocal(api)) throw new Error('invalid api url');
+            if (base.protocol !== 'https:' || base.pathname.replace(/\/$/, '') !== '/api/v1' || base.username || base.password || base.search || base.hash || isLocal(base)) throw new Error('invalid api base url');
+            if (api.origin !== base.origin || api.pathname.replace(/\/$/, '') !== base.pathname.replace(/\/$/, '')) throw new Error('api urls differ');
           } catch {
-            console.error('::error::Set NEXT_PUBLIC_API_URL and NEXT_PUBLIC_API_BASE_URL in Vercel Production to the same real HTTPS backend URL ending in /api/v1.');
+            console.error('::error::Set NEXT_PUBLIC_API_URL and NEXT_PUBLIC_API_BASE_URL in Vercel Production to the same real HTTPS backend origin ending in /api/v1. Values must not point to localhost.');
             process.exit(1);
           }
           NODE
+      - name: Ensure production branch is current before deploy
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          latest=$(gh api "repos/$REPOSITORY/commits/prod" --jq '.sha')
+          if [[ "$latest" != "$GITHUB_SHA" ]]; then
+            echo '::error::prod advanced during this run. Stop before publishing this obsolete commit.'
+            exit 1
+          fi
       - name: Build production artifact
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}

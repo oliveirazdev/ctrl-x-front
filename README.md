@@ -51,11 +51,11 @@ Para autenticação, configure `NEXT_PUBLIC_API_URL` com a URL pública da API i
 Configure `NEXT_PUBLIC_API_BASE_URL` em `.env.local`, inicialmente `http://localhost:8000/api/v1`.
 Variáveis `NEXT_PUBLIC_*` são públicas e devem conter somente configuração pública.
 
-A página consulta `/api/health` no Next.js. Essa rota consulta `GET /health` na origem da API,
-conforme `ctrl-x-backend/app/main.py`, com timeout de cinco segundos e validação Zod de
-`{"status":"ok"}`. O encaminhamento pelo servidor evita dependência de CORS para essa verificação.
+O indicador de API consulta `GET /health` no backend configurado em `NEXT_PUBLIC_API_BASE_URL`,
+com validação Zod de `{"status":"ok"}`. A API precisa permitir CORS para a origem do frontend.
 A interface apresenta carregamento, disponibilidade, falha e um botão para repetir a consulta.
-O backend pode estar desligado durante o desenvolvimento da interface.
+O endpoint local `/api/health` mede somente a disponibilidade do frontend Next.js e não depende
+do backend.
 
 ## Escopo desta etapa
 
