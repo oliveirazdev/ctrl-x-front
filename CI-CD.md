@@ -49,14 +49,17 @@ O workflow anterior foi avaliado e seu job de produção foi transferido para o 
 
 Em Settings → Environments, crie `production` e permita deployments somente da branch `prod`. Cadastre os seguintes environment secrets.
 
-| Secret | Origem |
-| --- | --- |
-| `VERCEL_TOKEN` | Token da conta autorizada a publicar no time/projeto Vercel. Use o menor escopo e validade disponíveis. |
-| `VERCEL_ORG_ID` | ID real do proprietário/time do projeto. Confira Team Settings → General, ou o campo `orgId` de `.vercel/project.json` após vincular ao projeto correto com a CLI autenticada. |
+| Nome | Finalidade | Local | Obrigatório | Formato seguro |
+| --- | --- | --- | --- | --- |
+| `VERCEL_TOKEN` | Autoriza Vercel CLI | Environment `production` → Environment secrets | Sim | Secret da conta/time com acesso ao projeto |
+| `VERCEL_ORG_ID` | Confirma o time vinculado | Environment `production` → Environment secrets | Sim | ID de Team Settings → General / `.vercel/project.json` |
+| `PRODUCTION_URL` | Healthcheck do frontend | Environment `production` → Environment variables | Sim | `https://dominio-real` ou com `/` final |
+| `NEXT_PUBLIC_API_URL` | Autenticação e chamadas da API | Vercel → Project Settings → Environment Variables → Production | Sim para API | Origem Railway confirmada + `/api/v1` |
+| `NEXT_PUBLIC_API_BASE_URL` | Indicador de saúde do backend | Mesmo ambiente Production da Vercel | Sim para indicador | Mesmo valor de `NEXT_PUBLIC_API_URL` |
 
 O Project ID já está fixado no workflow. O antigo secret `VERCEL_PROJECT_ID` deixa de ser necessário. A versão da CLI agora está no código. A antiga variable `VERCEL_CLI_VERSION` deixa de ser necessária.
 
-Cadastre a environment variable GitHub `PRODUCTION_URL` com a origem canônica HTTPS do frontend, sem caminho, usuário, query ou fragmento. Exemplo de formato apenas, `https://dominio-do-frontend`. Use o domínio real.
+Cadastre `PRODUCTION_URL` como environment variable GitHub com a origem HTTPS canônica do deployment Production Vercel, sem caminho, usuário, query ou fragmento. `https://dominio-real` e a mesma origem com `/` final são aceitos. Para identificar o domínio, abra o deployment Production atual no dashboard Vercel e copie somente a origem.
 
 Para obter o ORG ID por CLI, em um checkout local autorizado execute `vercel link --project prj_vJdkGC4SQreqnD8LhiDl7rnqtPC9`, selecione o time real e confira `projectId` e `orgId` em `.vercel/project.json`. Esse passo requer autenticação e cria o vínculo local. Confira o ID antes de cadastrar o secret. Preserve `.vercel/` ignorado pelo Git. Nunca versionar ou imprimir o token.
 
@@ -91,11 +94,11 @@ Referências oficiais de [controle de deploys Git](https://vercel.com/docs/proje
 Obtenha em Railway → serviço FastAPI → Settings → Networking o domínio público HTTPS real. Confirme que o backend expõe `/api/v1` e `/health`. Em Vercel → Settings → Environment Variables, no ambiente Production, configure os dois nomes com o mesmo valor real terminado em `/api/v1`.
 
 - `NEXT_PUBLIC_API_URL` é consumida pela autenticação.
-- `NEXT_PUBLIC_API_BASE_URL` é consumida pelo health check existente.
+- `NEXT_PUBLIC_API_BASE_URL` é consumida pelo indicador de saúde do backend no navegador.
 
-O workflow valida HTTPS, o sufixo `/api/v1`, ausência de credenciais na URL e igualdade das duas variáveis, antes do build. A validação de formato não comprova a identidade nem a disponibilidade da API. O responsável deve confirmar o domínio na Railway. Domínios personalizados são aceitos.
+O workflow valida HTTPS, o sufixo `/api/v1`, ausência de credenciais, caminho extra, query ou fragmento, ausência de localhost e igualdade de origem/caminho antes do build. A validação de formato não comprova a identidade nem a disponibilidade da API. O responsável deve confirmar o domínio na Railway. Se Railway ainda não tiver domínio público, não invente nem use placeholder: configure os dois valores após publicar o serviço. Rode `npm run validate:production-config` com `PRODUCTION_URL` definido para testar a origem localmente. Para repetir o deploy, abra Actions → Deploy production → Run workflow na branch prod; o gatilho de produção também continua após merge/push em prod.
 
-As variáveis são baixadas por `vercel pull` no ambiente Production. Variáveis NEXT_PUBLIC são embutidas no JavaScript pelo build. Atualizações exigem novo build/deploy. Credenciais do banco, chaves do backend e tokens Vercel ficam nos respectivos ambientes privados. Configure CORS do backend para a origem canônica do frontend e valide o cookie de autenticação no navegador. O contrato atual usa SameSite=Lax e exige frontend/API no mesmo site para autenticação entre origens. Domínios padrão vercel.app e railway.app precisam de uma estratégia de domínio/cookie compatível confirmada com o backend antes do lançamento.
+As variáveis são baixadas por `vercel pull` no ambiente Production. Variáveis NEXT_PUBLIC são embutidas no JavaScript pelo build. Atualizações exigem novo build/deploy. Credenciais do banco, chaves do backend e tokens Vercel ficam nos respectivos ambientes privados. Configure CORS do backend para a origem canônica do frontend e valide o cookie de autenticação no navegador. O indicador de API no cliente também depende de CORS. `/api/health` verifica somente a resposta local do Next.js e não falha se Railway estiver indisponível. O contrato atual usa SameSite=Lax e exige frontend/API no mesmo site para autenticação entre origens. Domínios padrão vercel.app e railway.app precisam de uma estratégia de domínio/cookie compatível confirmada com o backend antes do lançamento.
 
 ## Proteção das branches e primeira promoção
 

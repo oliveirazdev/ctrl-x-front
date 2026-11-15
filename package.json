@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "test": "node --experimental-transform-types --import ./tests/register-react.mjs --test tests/*.test.mts",
+    "validate:production-config": "node scripts/validate-production-config.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
