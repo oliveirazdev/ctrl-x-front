@@ -4,9 +4,36 @@
 
 O remoto `origin` é `https://github.com/rafascampelo/crlt-x-front.git`. O package.json está na raiz do repositório Git. A default branch continua `main`.
 
-A consulta `git ls-remote origin refs/heads/prod refs/heads/develop` confirmou os hashes das referências locais. `prod` contém package.json, package-lock.json, next.config.ts e src, no commit `c5c6ac649c2478b38729bddd51d0a5549195b3c8`. `develop` está em `ae49e2090f4d931d5e0903b54fbd29246297dd77`. Ambos já contêm Next.js. Reconfirme antes da primeira promoção.
+A auditoria com `git fetch origin` confirmou `prod` no commit `6e14d9b29bdbdf97f267a5cadcbc10522e29d1b9` e `develop` em `230a69a`. `prod` contém package.json, package-lock.json, next.config.ts, src, testes, os dois workflows e vercel.json com preset Next.js, instalação `npm ci` e deploy Git desativado.
 
 A configuração externa da Vercel, o ORG ID, o domínio de produção e a URL HTTPS da Railway dependem de acesso administrativo. Não foram confirmados nesta implementação. A configuração local não contém `.vercel/project.json`. `.env.local` aponta a API para localhost. A exclusão de `.env.example` já existia no working tree e foi preservada.
+
+## Diagnóstico da execução recente
+
+Foram consultados os metadados, steps e annotations públicos do GitHub Actions em 15/11/2026. A execução mais recente de `prod` foi iniciada às 17h24 de Brasília, no SHA `6e14d9b`. O job de CI concluiu instalação, lint, typecheck, testes e build. O job Publish production falhou em Validate required configuration, com `Missing required GitHub secret VERCEL_TOKEN in environment production`. Todos os comandos Vercel foram ignorados. A execução anterior, às 16h46, falhou no mesmo ponto. [Execução mais recente](https://github.com/rafascampelo/crlt-x-front/actions/runs/43757907064), [job de publicação](https://github.com/rafascampelo/crlt-x-front/actions/runs/43757907064/job/132946155051) e [execução anterior](https://github.com/rafascampelo/crlt-x-front/actions/runs/43754250431).
+
+A ausência de token disponível para o job é o bloqueio confirmado na execução recente. Isso não permite concluir se o token nunca foi cadastrado, foi cadastrado como variable, está em outro environment ou tem acesso restrito. A consulta autenticada da configuração de secrets não estava disponível. O download dos logs completos via API retornou HTTP 403. As annotations e o resultado dos steps estavam disponíveis publicamente.
+
+O erro antigo `sh: line 1: npm install: command not found`, associado ao comando completo entre aspas literais, é compatível com o shell tentando executar um nome de programa que contém espaço. Essa é a explicação técnica da mensagem fornecida. A origem daquele valor no dashboard ou no código do deployment antigo ainda precisa ser confirmada com o respectivo SHA e log. O código atual e o vercel.json de prod definem `npm ci`, sem aspas literais. O `installCommand` do arquivo tem precedência sobre o dashboard quando esse arquivo é carregado a partir da raiz correta. [Referência de installCommand](https://vercel.com/docs/project-configuration/vercel-json#installcommand).
+
+No último SHA de prod, os checks públicos consultados pertencem somente ao GitHub Actions. A amostra dos cinco deployments GitHub mais recentes retornou três registros, correspondentes às três execuções da esteira. Essa evidência não mostrou deploy Vercel nativo duplicado. A listagem de deployments no dashboard Vercel e seus logs não estavam acessíveis para confirmar exclusividade em todo o histórico. `git.deploymentEnabled: false` permanece versionado em prod.
+
+Os avisos atuais do runner indicaram depreciação de actions/checkout@v4 e actions/setup-node@v4. Os workflows foram atualizados para as versões oficiais exatas `checkout@v7.0.1` e `setup-node@v7.1.0`, que usam runtime Node 24 internamente e suportam os runners hospedados atuais. O aplicativo continua sendo instalado e testado com Node 22. O package.json e a entrada raiz do lockfile agora restringem Node a `22.x`, alinhando CI, testes e seleção do runtime Vercel.
+
+O guard após `vercel pull` confere projeto/time, raiz, preset Next.js, comandos do repositório e bloqueio de Git deployments, sem imprimir valores de ambiente. Se o dashboard tiver Install Command diferente, ele emite um aviso para alinhamento e mantém a precedência documentada do vercel.json.
+
+### Ajustes externos e próxima validação
+
+1. No repositório `rafascampelo/crlt-x-front`, abra Settings → Environments → production → Environment secrets. Cadastre ou corrija `VERCEL_TOKEN` com um token da Vercel que tenha acesso ao proprietário/time do projeto. Confira também `VERCEL_ORG_ID`. Secrets de repositório também podem ser resolvidos por `secrets`, desde que estejam disponíveis para essa execução. Variáveis em Variables, `.env.local` ou no ambiente de outra aplicação não preenchem esse contexto.
+2. Confirme `PRODUCTION_URL` em Environment variables do GitHub. O Project ID já é fixado no workflow em `prj_vJdkGC4SQreqnD8LhiDl7rnqtPC9`. A igualdade com o projeto e o ORG ID reais só poderá ser conferida após um `vercel pull` autenticado.
+3. Na Vercel, no projeto com esse ID, confira os overrides Production. Selecione Next.js, raiz do repositório, Node 22.x, Install Command `npm ci`, Build Command `npm run build` e Output Directory padrão. Remova aspas literais de comandos no dashboard. As aspas de delimitação de strings JSON no vercel.json são necessárias e não fazem parte do comando.
+4. Confira que o deployment antigo usou o repositório, SHA e Root Directory corretos. Se o log mostrar clone, instalação e build remotos completos, investigue sua origem. A etapa `vercel deploy --prebuilt --prod` deve publicar o artefato já construído no runner.
+5. Confira os dois nomes de URL da API no ambiente Production da Vercel, com o mesmo backend HTTPS real e `/api/v1`. Preserve o bloqueio `git.deploymentEnabled: false` e revise Deploy Hooks/integrações externas que possam publicar. Qualquer alteração externa depende de autorização do responsável.
+6. Após configurar o token, uma reexecução do job atual pode validar as credenciais usando o código desse SHA. Para validar as correções desta auditoria, promova-as pelo fluxo feature/* → develop → prod, com as aprovações necessárias. Uma reexecução de um SHA antigo conserva o workflow antigo.
+7. Na próxima execução autorizada, confira sucesso do CI, validação de secrets, `vercel pull --yes --environment=production`, validação do destino/configuração, `vercel build --prod`, existência de `.vercel/output/config.json`, `vercel deploy --prebuilt --prod`, espera do deployment e health checks. Registre o SHA e a URL publicados no resumo do Actions.
+8. Compare o SHA no dashboard Vercel, confirme a origem CLI/Actions e procure outro deployment para o mesmo commit. Execute o checklist funcional de login, cadastro, perfis, dashboards, assets e API abaixo. O término do build não demonstra autenticação ou conectividade de produção.
+
+O token permanece fora de arquivos e de variáveis NEXT_PUBLIC. Não foi feita publicação nem alterada configuração externa durante a auditoria.
 
 ## Workflows
 
@@ -103,15 +130,14 @@ Os smoke tests de produção dependem do deploy autorizado. A implementação do
 
 Se os checks falharem após publicar, avalie o impacto e obtenha autorização operacional. No painel Vercel identifique pelo SHA o deployment anterior saudável e execute Instant Rollback. Repita os smoke tests. Corrija ou reverta o código por feature/* → develop → prod com os mesmos gates. Preserve compatibilidade com a API durante a janela de rollback. A reversão não é automática no workflow.
 
-## Validações locais desta implementação
+## Validações locais da auditoria
 
 Executadas com Node `22.23.5` temporário, pois a instalação padrão local é Node 20.
 
-- `npm ci` concluiu com o lockfile existente. O npm reportou oito vulnerabilidades moderadas e depreciação do ESLint 9.39.5.
-- `npm run lint`, `npm run typecheck`, `npm test` e `npm run build` passaram. Os seis testes existentes passaram. O runner de testes emite avisos sobre transformação experimental de tipos e inferência de ES modules.
-- YAML dos dois workflows e JSON da Vercel foram analisados. O gatilho exclusivo de produção e sua dependência do CI foram conferidos. Nove cenários sintéticos do guard de projeto/time e URL da API passaram.
-- Servidor local do build de produção, com `next start` em 127.0.0.1:3107, respondeu HTTP 200 em `/`, `/login`, `/register`, `/patient/dashboard` e `/professional/dashboard`. Dezessete assets Next.js retornaram HTTP 200. Esses checks HTTP verificam entrega das páginas e assets.
-- `/api/health` retornou HTTP 503 com a configuração local, portanto a conexão integrada com a API permanece pendente. Autenticação/cadastro reais, autorização dos dashboards e comportamento no navegador em produção dependem do checklist de smoke tests.
-- `git diff --check` passou. O lockfile e o código da interface permaneceram sem alterações desta tarefa.
+- `npm run lint`, `npm run typecheck`, `npm test` e `npm run build` passaram. Os 33 testes existentes passaram. O runner de testes emite os avisos já existentes sobre transformação experimental de tipos e inferência de ES modules.
+- YAML dos dois workflows e JSON da Vercel foram analisados. O gatilho exclusivo em push de prod, a dependência do CI e a instalação com npm ci foram conferidos.
+- Quatorze cenários sintéticos do guard de configuração passaram, incluindo alvo/time incorretos, raiz incorreta, comandos com aspas literais, framework incorreto, Git deployment habilitado, URL API inválida e divergência do dashboard com precedência correta do arquivo versionado.
+- Dependências, devDependencies e engines do package.json foram comparadas com a entrada raiz do package-lock.json. A alteração do lockfile restringe apenas o engine raiz a Node 22.x. As versões de dependências foram preservadas. A instalação `npm ci` já consta como aprovada no CI remoto mais recente.
+- `git diff --check` passou. As mudanças desta auditoria abrangem os dois workflows, package.json, package-lock.json, README.md e este documento.
 
-Os comandos Vercel autenticados e os workflows no GitHub aguardam a configuração externa e a publicação autorizada dos arquivos.
+Os novos workflows e as novas versões das Actions ainda precisam executar no runner GitHub após promoção autorizada. Os comandos Vercel autenticados, as configurações efetivas do dashboard, a validade do token e o ORG ID real aguardam acesso autorizado. Os testes locais não comprovam o funcionamento do deployment de produção.

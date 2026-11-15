@@ -16,8 +16,7 @@ As versões estão em `package.json` e fixadas pelo `package-lock.json`.
 
 ## Desenvolvimento no Windows
 
-Use Node.js 20.9 ou superior e npm.
-Para executar os testes e reproduzir o CI, use Node.js 22.
+Use uma versão atualizada do Node.js 22 e npm, conforme o package.json e o CI.
 
 O processo de release e a configuração do GitHub Actions estão em [CI-CD.md](CI-CD.md).
 
