@@ -99,6 +99,18 @@ As variáveis são baixadas por `vercel pull` no ambiente Production. Variáveis
 
 ## Proteção das branches e primeira promoção
 
+### Automação de PRs e auto-merge
+
+O workflow `Enable pull request auto-merge` usa `pull_request_target` somente para ler metadados do PR e solicitar o auto-merge nativo do GitHub com squash. Ele não faz checkout nem executa código do PR. Só habilita auto-merge para PRs não draft do mesmo repositório: `feature/*` → `develop` e `develop` → `prod`. O GitHub continua responsável por aguardar CI, atualidade da branch e aprovação. Não há aprovação automatizada. Se auto-merge estiver desativado no repositório, o comando falha e o PR continua aberto.
+
+O workflow `Create production promotion PR` roda após push em develop ou manualmente. Ele reutiliza o PR aberto `develop` → `prod` e só cria um novo quando a comparação indica commits à frente. `GITHUB_TOKEN` recebe somente `contents: read` e `pull-requests: write`; não pode aprovar nem contornar regras. Ative **Allow auto-merge** nas configurações gerais do repositório. Se políticas da organização impedirem o `GITHUB_TOKEN` de criar PRs, configure uma GitHub App dedicada com `Contents: read` e `Pull requests: write`, restrita a este repositório, e troque o token do workflow por um token de instalação de curta duração. Não use PAT pessoal ou bypass.
+
+Configure Rulesets separados para `develop` e `prod`, ambos sem bypass actors, com Require a pull request, Require status checks, Require branches to be up to date, Block force pushes e Block deletions. Use squash como único método de merge, se a política permitir. O status check obrigatório é `CI` (job `CI` do workflow Frontend); confirme o nome exibido pelo GitHub após um PR de teste. Não habilite merge queue sem adicionar evento e validação `merge_group` ao CI.
+
+Em `develop`, exija o check `CI` e não exija aprovação humana. Em `prod`, exija `CI` e pelo menos uma aprovação de pessoa diferente do autor; habilite dismissal de aprovação após novos commits e CODEOWNERS se apropriado. Marque “Require approval of the most recent reviewable push” para impedir que o autor aprove a própria última alteração. A branch deve permanecer sem bypass inclusive para administradores e Actions. Confira se o plano GitHub da conta/organização permite Rulesets e as regras requeridas; isso não pôde ser verificado nesta sessão, pois `gh` não está instalado e não há acesso administrativo confirmado.
+
+Teste com PR sintético: confirme que `feature/*` recebe CI e auto-merge pendente, que CI falhando mantém o PR aberto, e que a aprovação humana requerida destrava o auto-merge em `prod`. Tente push direto em `develop` e `prod` com uma branch de teste/usuário sem bypass; o servidor deve rejeitar. Depois confirme que apenas o evento `push` resultante do merge em `prod` dispara `Deploy production`. Os workflows mantêm esse gatilho e o deploy usa `GITHUB_TOKEN` sem permissões de escrita em conteúdo, evitando eventos de deploy recursivos.
+
 Em GitHub → Settings → Rules → Rulesets, proteja develop e prod. Exija PR, aprovação conforme a equipe, resolução de conversas, status check `CI` do workflow Frontend e atualização da branch antes do merge. Bloqueie force push e exclusões e aplique a proteção aos administradores, com bypass restrito conforme a política do projeto. Selecione o check real emitido por um PR após publicar a configuração. Não habilite merge queue sem adicionar suporte ao evento merge_group.
 
 A regra de PR é essencial para que um push em prod corresponda a um merge aprovado. O evento push sozinho também seria disparado por um push direto autorizado no servidor. O gate CI verifica a origem dos PRs. As proteções precisam ser ativadas no GitHub.
