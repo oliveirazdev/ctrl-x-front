@@ -1,0 +1,32 @@
+name: Create production promotion PR
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+permissions:
+  contents: read
+  pull-requests: write
+jobs:
+  promote:
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create or update develop to prod PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          existing=$(gh pr list --repo "$REPOSITORY" --base prod --head develop --state open --json number --jq '.[0].number // empty')
+          if [[ -n "$existing" ]]; then
+            echo "Promotion PR #$existing already exists; GitHub updates it as develop advances."
+            exit 0
+          fi
+          comparison=$(gh api "repos/$REPOSITORY/compare/prod...develop" --jq '.status')
+          if [[ "$comparison" != ahead && "$comparison" != diverged ]]; then
+            echo 'develop has no commits to promote.'
+            exit 0
+          fi
+          gh pr create --repo "$REPOSITORY" --base prod --head develop \
+            --title 'Promote develop to prod' \
+            --body 'Automated promotion PR. Review the changes and provide the required human approval. Native auto-merge waits for CI and all prod branch rules.'
