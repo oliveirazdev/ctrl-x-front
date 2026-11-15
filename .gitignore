@@ -3,3 +3,10 @@ node_modules/
 .next/
 out/
 *.tsbuildinfo
+.env*
+!.env.example
+/coverage/
+npm-debug.log*
+.vercel/
+deployment-url.txt
+health.json

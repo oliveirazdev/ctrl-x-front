@@ -1,7 +1,7 @@
 # Ctrl X — Frontend Codex Instructions
 
 ## Mission
-Build a mobile-first, accessible, patient-first health-tracking PWA with Next.js App Router, React, TypeScript and CSS Modules. Keep the patient experience approachable and focused.
+Build an accessible, patient-first, responsive health-tracking web application with Next.js App Router, React, TypeScript and CSS Modules. It is accessed in a browser on desktop, tablet and mobile; the frontend is deployed to Vercel and the backend to Railway. Keep the patient experience approachable and focused.
 
 ## Structure
 - `src/app`: routes/layouts; `src/features`: domain UI; `src/components`: shared UI; `src/services`: typed API client; `src/types`: contracts; `src/styles`: tokens/global styles.
