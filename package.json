@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "test": "node --experimental-transform-types --test tests/*.test.mts",
+    "test": "node --experimental-transform-types --import ./tests/register-react.mjs --test tests/*.test.mts",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
