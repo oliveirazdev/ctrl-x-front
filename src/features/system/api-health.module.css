@@ -1,0 +1,2 @@
+.status { display: flex; align-items: center; flex-wrap: wrap; gap: 1rem; }
+.status p { color: var(--color-muted); font-size: .875rem; max-width: 24rem; margin: 0; }
