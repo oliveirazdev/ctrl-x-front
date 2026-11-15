@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { authRequest, AuthError, credentialsSchema, dashboardPath, registrationSchema } from "../src/features/auth/auth.ts";
+import { authRequest, AuthError, credentialsSchema, dashboardPath, registrationSchema, logout } from "../src/features/auth/auth.ts";
+import { ApiError } from "../src/services/api-client.ts";
 
 test("registration validates password, confirmation and required name", () => {
   const input = { email: "patient@example.test", password: "valid-password-123", confirmation: "valid-password-123", full_name: "Person", role: "PATIENT" };
@@ -8,6 +9,24 @@ test("registration validates password, confirmation and required name", () => {
   assert.equal(registrationSchema.safeParse({ ...input, confirmation: "different" }).success, false);
   assert.equal(registrationSchema.safeParse({ ...input, full_name: "  " }).success, false);
   assert.equal(credentialsSchema.safeParse({ email: "invalid", password: "short" }).success, false);
+});
+
+test("logout revokes the cookie session through the API and accepts HTTP 204", async (context) => {
+  process.env.NEXT_PUBLIC_API_URL = "http://localhost:8000/api/v1/";
+  context.mock.method(globalThis, "fetch", async (url: string, options: RequestInit) => {
+    assert.equal(url, "http://localhost:8000/api/v1/auth/logout");
+    assert.equal(options.method, "POST");
+    assert.equal(options.credentials, "include");
+    assert.equal(options.cache, "no-store");
+    return new Response(null, { status: 204 });
+  });
+  assert.equal(await logout(), undefined);
+});
+
+test("logout propagates backend failures so the UI can offer another attempt", async (context) => {
+  process.env.NEXT_PUBLIC_API_URL = "http://localhost:8000/api/v1";
+  context.mock.method(globalThis, "fetch", async () => Response.json({ detail: "Forbidden" }, { status: 403 }));
+  await assert.rejects(logout(), (error) => error instanceof ApiError && error.status === 403);
 });
 
 test("authentication sends credentials and validates the API response", async (context) => {

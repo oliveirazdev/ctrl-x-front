@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { fetchJson } from "../../services/api-client.ts";
 import { crefitoNumberSchema, crefitoRegionSchema } from "../../types/care.ts";
 
 export const userSchema = z.object({ id: z.string().uuid(), email: z.string().email(), role: z.enum(["PATIENT", "PROFESSIONAL"]) });
@@ -45,4 +46,13 @@ export async function authRequest(path: "login" | "register" | "me", body?: obje
 
 export function dashboardPath(role: User["role"]) {
   return role === "PATIENT" ? "/patient/dashboard" : "/professional/dashboard";
+}
+
+export async function logout(): Promise<void> {
+  const base = process.env.NEXT_PUBLIC_API_URL;
+  if (!base) throw new Error("Endereço da API não configurado.");
+  await fetchJson(`${base.replace(/\/$/, "")}/auth/logout`, z.undefined(), {
+    method: "POST",
+    credentials: "include",
+  });
 }
