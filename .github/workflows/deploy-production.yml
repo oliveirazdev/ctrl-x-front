@@ -21,7 +21,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: prj_vJdkGC4SQreqnD8LhiDl7rnqtPC9
       VERCEL_CLI_VERSION: '50.0.0'
@@ -31,7 +30,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for name in VERCEL_TOKEN VERCEL_ORG_ID; do
+          for name in VERCEL_ORG_ID; do
             if [[ -z "${!name}" ]]; then
               echo "::error::Missing required GitHub secret $name. Configure Settings > Environments > production > Environment secrets in this repository."
               exit 1
@@ -47,7 +46,10 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm install --global "vercel@$VERCEL_CLI_VERSION"
-      - run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+      - name: Pull Vercel production configuration
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
       - name: Validate linked project and Production API configuration
         run: |
           node <<'NODE'
@@ -87,10 +89,14 @@ jobs:
           }
           NODE
       - name: Build production artifact
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: vercel build --prod --token="$VERCEL_TOKEN"
       - name: Validate build output
         run: test -s .vercel/output/config.json
       - name: Publish validated artifact
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
           set -euo pipefail
           vercel deploy --prebuilt --prod --yes --token="$VERCEL_TOKEN" > deployment-url.txt
