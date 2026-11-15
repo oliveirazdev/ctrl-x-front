@@ -1,3 +1,4 @@
 import { Suspense } from "react";
 import { AuthForm } from "@/features/auth/form";
-export default function Login() { return <Suspense fallback={<p>Carregando…</p>}><AuthForm register={false} /></Suspense>; }
+import { ContentState } from "@/components/ui/content-state";
+export default function Page() { return <Suspense fallback={<ContentState kind="loading" title="Carregando seu acesso…" />}><AuthForm register={false} /></Suspense>; }

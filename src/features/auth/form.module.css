@@ -1,5 +1,18 @@
-.card { max-width: 32rem; margin: auto; padding: 2rem; border: 1px solid var(--color-border); border-radius: 1rem; background: var(--color-surface); }
+.card { max-width: 30rem; margin: auto; padding: clamp(1.5rem, 4vw, 2.5rem); border-radius: var(--radius-card); background: var(--color-surface); box-shadow: var(--shadow-surface); }
+.card::before { content: ""; display: block; width: 2rem; height: .25rem; border-radius: .25rem; background: var(--color-primary); margin-bottom: 1.5rem; }
+.card h1 { margin: 0; font-size: 2rem; font-weight: 650; }
+.intro { color: var(--color-muted); margin-block: .75rem 2rem; font-size: .9375rem; }
 .card form { display: grid; gap: .5rem; }
-.card input, .card select, .card button { font: inherit; min-height: 2.75rem; padding: .5rem; border: 1px solid var(--color-border); border-radius: .4rem; }
-.card button { margin-top: 1rem; background: var(--color-primary); color: white; cursor: pointer; }
-.card span { color: #9d2525; }
+.card label { font-size: .875rem; font-weight: 600; }
+.card input, .card select { width: 100%; min-width: 0; min-height: 2.75rem; padding: .625rem .75rem; border: 1px solid var(--color-border); border-radius: var(--radius-control); background: var(--color-input); color: var(--color-text); }
+.card input:hover, .card select:hover { border-color: var(--color-primary); }
+.card input[aria-invalid="true"] { border-color: var(--color-error); }
+.card button { width: 100%; margin-top: 1rem; }
+.card span { color: var(--color-error); font-size: .8125rem; }
+.card span:empty { display: none; }
+.card input + span, .card select { margin-bottom: .5rem; }
+.card [role="alert"] { padding: 1rem; border-radius: var(--radius-control); background: var(--color-error-soft); color: var(--color-error); }
+.card [role="status"] { padding: 1rem; border-radius: var(--radius-control); background: var(--color-primary-soft); }
+.hint { margin: 0 0 .5rem; color: var(--color-tertiary); font-size: .8125rem; }
+.card > p:last-child { text-align: center; margin-block: 1.5rem 0; font-size: .875rem; }
+.card > p:last-child a { display: inline-flex; align-items: center; min-height: 2.75rem; }
