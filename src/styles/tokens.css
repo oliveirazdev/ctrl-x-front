@@ -1,15 +1,10 @@
 :root {
-  --color-background: #f6f8f7;
-  --color-surface: #ffffff;
-  --color-text: #19332d;
-  --color-muted: #4d655e;
-  --color-primary: #16634d;
-  --color-border: #cbd9d3;
-  --color-focus: #1259ad;
-  --radius-card: 1rem;
-  --space-1: 0.5rem;
-  --space-2: 1rem;
-  --space-3: 1.5rem;
-  --space-4: 2rem;
-  --content-width: 64rem;
+ --color-background: #f3f7f5; --color-surface: #fff; --color-text: #193c34;
+ --color-muted: #4c675e; --color-tertiary: #61756e; --color-primary: #17634e;
+ --color-primary-hover: #104b3b; --color-primary-soft: #e5f1eb; --color-border: #dbe5df;
+ --color-focus: #2563a6; --color-input: #f7faf8; --color-error: #a13030; --color-error-soft: #fff1ef;
+ --radius-control: .5rem; --radius-card: 1rem;
+ --shadow-surface: 0 0 0 1px rgb(25 60 52 / 5%), 0 2px 4px rgb(25 60 52 / 3%), 0 8px 24px rgb(25 60 52 / 3%);
+ --space-1: .5rem; --space-2: 1rem; --space-3: 1.5rem; --space-4: 2rem; --content-width: 72rem;
+ --font-body: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
 }

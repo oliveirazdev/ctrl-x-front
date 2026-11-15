@@ -1,0 +1,13 @@
+.button { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 2.75rem; padding: .625rem 1.25rem; border: 1px solid transparent; border-radius: var(--radius-control); background: var(--color-primary); color: var(--color-surface); font-size: .9375rem; font-weight: 600; text-decoration: none; transition: transform 140ms cubic-bezier(.23,1,.32,1); }
+.button:hover { background: var(--color-primary-hover); color: var(--color-surface); }
+.button:active:not(:disabled) { transform: scale(.98); }
+.secondary { background: var(--color-surface); color: var(--color-primary); border-color: var(--color-border); }
+.secondary:hover { background: var(--color-primary-soft); color: var(--color-primary); }
+.eyebrow { margin: 0 0 .75rem; color: var(--color-primary); font-size: .75rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.state { padding: 2rem; border-radius: var(--radius-card); background: var(--color-surface); box-shadow: var(--shadow-surface); }
+.state h2 { font-size: 1.25rem; margin: 0 0 .75rem; }
+.state p { color: var(--color-muted); margin: 0 0 1.5rem; max-width: 38rem; }
+.state p:last-child { margin-bottom: 0; }
+.state::before { content: ""; display: block; width: 2rem; height: .25rem; border-radius: .25rem; background: var(--color-primary); margin-bottom: 1.5rem; }
+.error { background: var(--color-error-soft); }
+.error::before { background: var(--color-error); }
