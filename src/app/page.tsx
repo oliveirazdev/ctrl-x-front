@@ -1,5 +1,6 @@
 import { ApiHealth } from "@/features/system/api-health";
 import styles from "./page.module.css";
+import Link from "next/link";
 
 export default function HomePage() {
   return (
@@ -9,6 +10,7 @@ export default function HomePage() {
         <p className={styles.intro}>
           O Ctrl X está sendo preparado para acompanhar sua saúde e reunir seu histórico de cuidados.
         </p>
+        <p><Link href="/login">Entrar</Link> · <Link href="/register">Criar conta</Link></p>
       </section>
       <section className={styles.card} aria-labelledby="conexao">
         <h2 id="conexao">Conexão com o serviço</h2>

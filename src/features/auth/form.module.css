@@ -1,0 +1,5 @@
+.card { max-width: 32rem; margin: auto; padding: 2rem; border: 1px solid var(--color-border); border-radius: 1rem; background: var(--color-surface); }
+.card form { display: grid; gap: .5rem; }
+.card input, .card select, .card button { font: inherit; min-height: 2.75rem; padding: .5rem; border: 1px solid var(--color-border); border-radius: .4rem; }
+.card button { margin-top: 1rem; background: var(--color-primary); color: white; cursor: pointer; }
+.card span { color: #9d2525; }
