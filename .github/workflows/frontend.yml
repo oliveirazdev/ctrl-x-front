@@ -20,6 +20,8 @@ jobs:
       NEXT_PUBLIC_API_BASE_URL: http://127.0.0.1:8000/api/v1
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -29,6 +31,20 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+      - name: Validate pull request commit messages
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git log --format=%s "$BASE_SHA..$HEAD_SHA" | while IFS= read -r subject; do
+            if ! [[ "$subject" =~ ^(feat|fix|refactor|tests):[[:space:]]+[a-z][a-z0-9[:space:]]*$ ]]; then
+              echo "Invalid commit subject: $subject" >&2
+              echo "Expected type: short imperative description in English." >&2
+              exit 1
+            fi
+          done
   production:
     name: Publish production
     if: github.event_name == 'push' && github.ref == 'refs/heads/prod'

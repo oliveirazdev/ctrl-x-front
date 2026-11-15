@@ -2,6 +2,14 @@
 
 O workflow `.github/workflows/frontend.yml` executa CI em PRs destinados a `develop` ou `prod` e em pushes nessas branches. Somente push em `prod`, com CI aprovado, habilita publicação. Cada job tem timeout, permissões de leitura e execução serializada. Nenhum deploy foi executado durante a implementação.
 
+## Bloquear push direto em `prod`
+
+No GitHub, abra **Settings → Rules → Rulesets → New branch ruleset**. Nomeie `protect-prod`, selecione **Active**, direcione a branch `prod` e não conceda bypass. Marque **Restrict updates**, **Require a pull request before merging**, **Require status checks to pass** com o check `CI`, **Block force pushes** e **Restrict deletions**. Se a equipe exigir revisão, marque também aprovação obrigatória. Assim pushes diretos são rejeitados no servidor, inclusive para administradores sem bypass.
+
+Crie regra equivalente para `develop`, sem permitir bypass. O arquivo versionado não consegue impor proteção remota. A proteção só vale depois de ativar essas regras nas configurações GitHub com permissão administrativa. Confirme que o workflow publicou o check `CI` para seleção antes de torná-lo obrigatório.
+
+Para releases, aceite PR para `prod` somente com `develop` como origem e CI aprovado. GitHub não restringe nativamente a branch de origem com a regra básica de proteção. Revise a origem do PR durante aprovação ou use uma regra de repositório/automação adicional se for necessário impor isso tecnicamente. Desative qualquer mecanismo que contorne a proteção.
+
 ## Configuração
 
 Crie o GitHub Environment `production`, restrinja as branches autorizadas a `prod` e configure revisores obrigatórios conforme a equipe. Cadastre os secrets `VERCEL_TOKEN`, `VERCEL_ORG_ID` e `VERCEL_PROJECT_ID` nesse environment. O token precisa publicar apenas no projeto/time correspondente.
@@ -22,9 +30,9 @@ Após a publicação, a pipeline verifica `/` e `/api/health` na URL canônica, 
 
 ## Proteção e release
 
-Proteja `develop` e `prod` com PR obrigatório, aprovação de revisão, status obrigatório `CI`, resolução de conversas e bloqueio de force push e exclusão. Restrinja bypass e pushes diretos em `prod`. PRs de forks executam somente CI sem credenciais. Revise alterações de workflows antes do merge.
+Proteja `develop` e `prod` com rulesets ativos no GitHub. Aplique as regras a administradores também e não configure bypass. Exija PR, status obrigatório `CI`, resolução de conversas e bloqueie force push e exclusão. Em `prod`, restrinja atualizações e permita somente o caminho por PR de `develop`. Revise alterações de workflows antes do merge. A configuração exige permissão de administração no repositório e não é ativada por um arquivo versionado.
 
-Desenvolva por PR para `develop`. Para release, abra PR de `develop` para `prod`, revise configuração pública e compatibilidade da API e aguarde CI. O merge gera push em `prod`, novo CI e publicação após aprovação do environment. Execuções de produção ficam serializadas e não são canceladas durante publicação.
+Desenvolva por PR para `develop`. Para release, abra PR de `develop` para `prod`, revise configuração pública e compatibilidade da API e aguarde CI. O merge gera push em `prod`, novo CI e publicação após aprovação do environment. Execuções de produção ficam serializadas e não são canceladas durante publicação. Com o ruleset ativo, pushes diretos para `prod` são recusados no GitHub. O job de produção continua condicionado a push em `prod`, que ocorre após o merge autorizado do PR.
 
 Publique mudanças aditivas da API antes do frontend que as utiliza. Preserve campos e endpoints consumidos pela versão anterior durante a janela de rollback. Registre no PR a versão/commit da API compatível e valide o fluxo integrado em ambiente de teste antes da aprovação. Os testes atuais verificam o contrato confirmado de health e o cliente HTTP. Amplie a cobertura conforme novos contratos forem implementados.
 
