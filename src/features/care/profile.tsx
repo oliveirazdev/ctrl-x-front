@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import { LogoutButton } from "@/features/auth/logout-button";
 import { getProfile, updateProfile } from "@/services/care";
 import { ApiError } from "@/services/api-client";
 import {
@@ -202,6 +203,15 @@ export function ProfileEditor({ profile }: { profile: Profile }) {
 }
 
 export function ProfilePage() {
+  return (
+    <>
+      <div className={styles.logoutRow}><LogoutButton /></div>
+      <ProfileContent />
+    </>
+  );
+}
+
+function ProfileContent() {
   const { user } = useCare();
   const query = useQuery({
     queryKey: ["care", user.id, "profile"],
