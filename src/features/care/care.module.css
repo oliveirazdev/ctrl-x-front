@@ -241,6 +241,15 @@
 .skeleton:last-child {
   max-width: 55%;
 }
+.logoutRow {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: var(--space-3);
+}
+.logoutRow p {
+  color: var(--color-error);
+  max-width: 28rem;
+}
 .dialog {
   max-width: min(30rem, calc(100% - 2rem));
   border: 0;
