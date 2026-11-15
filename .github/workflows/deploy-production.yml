@@ -1,0 +1,89 @@
+name: Deploy production
+on:
+  push:
+    branches: [prod]
+permissions:
+  contents: read
+concurrency:
+  group: frontend-production
+  cancel-in-progress: false
+env:
+  NEXT_TELEMETRY_DISABLED: '1'
+jobs:
+  validate:
+    name: Validate production
+    uses: ./.github/workflows/frontend.yml
+  production:
+    name: Publish production
+    needs: validate
+    if: github.event_name == 'push' && github.ref == 'refs/heads/prod'
+    environment: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: prj_vJdkGC4SQreqnD8LhiDl7rnqtPC9
+      VERCEL_CLI_VERSION: '50.0.0'
+      PRODUCTION_URL: ${{ vars.PRODUCTION_URL }}
+    steps:
+      - name: Validate required configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in VERCEL_TOKEN VERCEL_ORG_ID; do
+            if [[ -z "${!name}" ]]; then
+              echo "::error::Missing required GitHub secret $name in environment production."
+              exit 1
+            fi
+          done
+          node -e 'try { const u = new URL(process.env.PRODUCTION_URL); if (u.protocol !== "https:" || u.username || u.password || u.pathname !== "/" || u.search || u.hash) throw Error(); } catch { console.error("::error::Set production variable PRODUCTION_URL to the canonical HTTPS origin."); process.exit(1); }'
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm install --global "vercel@$VERCEL_CLI_VERSION"
+      - run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+      - name: Validate linked project and Production API configuration
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const { loadEnvConfig } = require('@next/env');
+          const project = JSON.parse(fs.readFileSync('.vercel/project.json', 'utf8'));
+          if (project.projectId !== process.env.VERCEL_PROJECT_ID || project.orgId !== process.env.VERCEL_ORG_ID) {
+            console.error('::error::Vercel project or organization does not match the configured target.');
+            process.exit(1);
+          }
+          loadEnvConfig('.vercel', false, { info() {}, error() {} });
+          try {
+            const api = new URL(process.env.NEXT_PUBLIC_API_URL);
+            if (api.protocol !== 'https:' || api.username || api.password || api.pathname !== '/api/v1' || api.search || api.hash || ['localhost', '127.0.0.1', '[::1]'].includes(api.hostname)) throw Error();
+            if (process.env.NEXT_PUBLIC_API_BASE_URL !== process.env.NEXT_PUBLIC_API_URL) throw Error();
+          } catch {
+            console.error('::error::Set NEXT_PUBLIC_API_URL and NEXT_PUBLIC_API_BASE_URL in Vercel Production to the same real HTTPS backend URL ending in /api/v1.');
+            process.exit(1);
+          }
+          NODE
+      - name: Build production artifact
+        run: vercel build --prod --token="$VERCEL_TOKEN"
+      - name: Validate build output
+        run: test -s .vercel/output/config.json
+      - name: Publish validated artifact
+        run: |
+          set -euo pipefail
+          vercel deploy --prebuilt --prod --yes --token="$VERCEL_TOKEN" > deployment-url.txt
+          URL=$(tail -n 1 deployment-url.txt)
+          [[ "$URL" == https://* ]]
+          echo "Published commit $GITHUB_SHA to $URL" >> "$GITHUB_STEP_SUMMARY"
+          vercel inspect "$URL" --wait --token="$VERCEL_TOKEN"
+      - name: Check production health
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --retry 5 --retry-all-errors --retry-delay 10 --max-time 20 "${PRODUCTION_URL%/}/" -o /dev/null
+          curl --fail --silent --show-error --retry 5 --retry-all-errors --retry-delay 10 --max-time 20 "${PRODUCTION_URL%/}/api/health" -o health.json
+          node -e "const h=require('./health.json'); if(h.status!=='ok') process.exit(1)"
+      - name: Record failure
+        if: failure()
+        run: echo 'Production publication or validation failed. Review the failed step and follow CI-CD.md for rollback.' >> "$GITHUB_STEP_SUMMARY"
