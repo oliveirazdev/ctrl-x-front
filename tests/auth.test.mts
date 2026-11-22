@@ -42,6 +42,34 @@ test("authentication sends credentials and validates the API response", async (c
   assert.equal(dashboardPath("PROFESSIONAL"), "/professional/dashboard");
 });
 
+test("registration posts to the configured API and accepts a successful 201 response", async (context) => {
+  process.env.NEXT_PUBLIC_API_URL = "http://localhost:8000/api/v1";
+  const body = {
+    email: "patient@example.test",
+    password: "valid-password-123",
+    full_name: "Synthetic Patient",
+    role: "PATIENT",
+  };
+  context.mock.method(globalThis, "fetch", async (url: string | URL | Request, init?: RequestInit) => {
+    assert.equal(url, "http://localhost:8000/api/v1/auth/register");
+    assert.equal(init?.method, "POST");
+    assert.equal(init?.credentials, "include");
+    assert.equal(new Headers(init?.headers).get("Content-Type"), "application/json");
+    assert.deepEqual(JSON.parse(String(init?.body)), body);
+    return Response.json({
+      id: "00000000-0000-4000-8000-000000000001",
+      email: body.email,
+      role: body.role,
+    }, { status: 201 });
+  });
+
+  assert.deepEqual(await authRequest("register", body), {
+    id: "00000000-0000-4000-8000-000000000001",
+    email: body.email,
+    role: body.role,
+  });
+});
+
 test("API errors preserve status and message", async (context) => {
   process.env.NEXT_PUBLIC_API_URL = "http://localhost:8000/api/v1";
   context.mock.method(globalThis, "fetch", async () => Response.json({ detail: "Not authenticated" }, { status: 401 }));

@@ -1,2 +1,7 @@
 .status { display: flex; align-items: center; flex-wrap: wrap; gap: 1rem; }
-.status p { color: var(--color-muted); font-size: .875rem; max-width: 24rem; margin: 0; }
+.status p { display: flex; align-items: center; gap: .5rem; color: var(--color-muted); font-size: .875rem; max-width: 24rem; margin: 0; }
+.status p::before { content: ""; flex: 0 0 .5rem; width: .5rem; height: .5rem; border-radius: 50%; background: var(--color-tertiary); }
+.status[data-state="connected"] p { color: var(--color-primary); font-weight: 600; }
+.status[data-state="connected"] p::before { background: var(--color-primary); }
+.status[data-state="error"] p { color: var(--color-error); }
+.status[data-state="error"] p::before { background: var(--color-error); }
