@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
 import { fetchJson } from "@/services/api-client";
 import { healthSchema } from "@/types/health";
 import { getApiHealthUrl } from "./api-health-url";
