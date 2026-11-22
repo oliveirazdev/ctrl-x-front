@@ -2,12 +2,12 @@
 
 ## Fluxo vigente
 
-1. Trabalhe em `feature/*` e abra PR para `develop`.
-2. O workflow Frontend executa o check `CI`: instalação, lint, TypeScript, testes e build. Novos commits cancelam o CI anterior do mesmo PR.
-3. Ative Enable auto-merge no PR pela interface do GitHub. O merge aguarda as proteções da branch.
-4. Abra manualmente o PR `develop` → `prod`. Não existe workflow de promoção nem criação automática de PRs.
-5. O PR de produção executa CI e exige uma aprovação humana pelas regras de `prod`. Ative o auto-merge nativo nesse PR se desejar.
-6. O merge em `prod` dispara somente Deploy production. Não há CI em push de develop nem CI reutilizado dentro do deploy.
+1. Confirme que a árvore está limpa e atualize `develop` somente por fast-forward: `git fetch origin develop`, `git switch develop` e `git pull --ff-only origin develop`.
+2. Crie uma branch `feature/<nome-em-ingles-kebab-case>` a partir de `develop`; não trabalhe diretamente em `develop` ou `prod`.
+3. Abra um PR da feature para `develop`. O workflow Frontend executa o check `CI` com `npm ci`, lint, TypeScript, testes e build. Novos commits cancelam o CI anterior do mesmo PR. O workflow rejeita branches fora de `feature/*` nesse destino.
+4. O auto-merge pode ser ativado manualmente no PR pela interface do GitHub; ele depende de Allow auto-merge e das proteções configuradas no repositório.
+5. Abra manualmente o PR `develop` → `prod`. O workflow executa CI nesse PR e valida que sua origem é `develop` no mesmo repositório.
+6. Configure a aprovação humana como proteção externa de `prod`; ela não é imposta pelo YAML do workflow. Qualquer push em `prod` aciona Deploy production, portanto a proteção da branch é necessária para restringir a publicação ao fluxo de PR. Não existe workflow de promoção nem criação automática de PRs.
 
 São duas verificações de CI ao longo do fluxo completo: uma para cada PR. Elas validam a combinação com a respectiva branch de destino. O build da Vercel usa o ambiente Production e gera o artefato prebuilt; por isso ele continua necessário mesmo com o build de CI aprovado.
 
@@ -37,13 +37,11 @@ O domínio canônico aparece em Domains no projeto Vercel. As URLs da API devem 
 
 Antes de ativar esse fluxo, configure Rulesets ativos para develop e prod: PR obrigatório, check `CI` obrigatório, bloqueio de force push e exclusão, sem bypass de administradores ou automações. O workflow de push não distingue push direto de merge; impedir pushes diretos é responsabilidade dessas regras do GitHub.
 
-Em develop, revisão humana pode ser opcional. Em prod, exija ao menos uma aprovação humana e invalide aprovações após mudanças. Nenhum workflow aprova PRs. Confira o nome real `CI` num PR antes de selecionar o check obrigatório.
+Em develop, revisão humana pode ser opcional. Em prod, exija ao menos uma aprovação humana e invalide aprovações após mudanças. Nenhum workflow aprova PRs. Confira o nome real `CI` num PR antes de selecionar o check obrigatório. Essas proteções precisam ser configuradas manualmente no GitHub; os arquivos do repositório não as ativam.
 
 Habilite Allow auto-merge em Settings → General → Pull Requests. Ative o auto-merge em cada PR com sua conta. A automação auxiliar com GITHUB_TOKEN foi removida: eventos produzidos por esse token têm restrições de disparo de novos workflows. Não é necessário PAT nem GitHub App para este fluxo.
 
 Prefira squash para feature → develop. Use merge commit para develop → prod, preservando a ancestralidade entre branches permanentes. Não habilite linear history em prod se usar merge commit. Se exigir branch atualizada antes do merge, sincronize mudanças da base por PR; nunca por push direto. Não habilite merge queue sem adaptar o CI a merge_group.
-
-A branch local de ajustes pode ter prefixo chore; o gate atual exige feature/* para entrar em develop. Use uma branch feature/* ao publicar estes ajustes.
 
 Plano, permissões e regras remotas não foram confirmados nem alterados nesta implementação.
 
