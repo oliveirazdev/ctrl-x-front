@@ -35,6 +35,14 @@ test("authentication sends credentials and validates the API response", async (c
     assert.equal(url, "http://localhost:8000/api/v1/auth/login");
     assert.equal(init?.credentials, "include");
     assert.equal(init?.method, "POST");
+    assert.equal(init?.cache, "no-store");
+    const headers = new Headers(init?.headers);
+    assert.equal(headers.get("Content-Type"), "application/json");
+    assert.equal(headers.has("Authorization"), false);
+    assert.deepEqual(JSON.parse(String(init?.body)), {
+      email: "patient@example.test",
+      password: "valid-password-123",
+    });
     return Response.json({ id: "00000000-0000-4000-8000-000000000001", email: "patient@example.test", role: "PATIENT" });
   });
   const user = await authRequest("login", { email: "patient@example.test", password: "valid-password-123" });
@@ -68,6 +76,23 @@ test("registration posts to the configured API and accepts a successful 201 resp
     email: body.email,
     role: body.role,
   });
+});
+
+test("session lookup includes browser-managed credentials and prevents caching", async (context) => {
+  process.env.NEXT_PUBLIC_API_URL = "http://localhost:8000/api/v1";
+  context.mock.method(globalThis, "fetch", async (url: string | URL | Request, init?: RequestInit) => {
+    assert.equal(url, "http://localhost:8000/api/v1/auth/me");
+    assert.equal(init?.method, "GET");
+    assert.equal(init?.credentials, "include");
+    assert.equal(init?.cache, "no-store");
+    assert.equal(init?.body, undefined);
+    return Response.json({
+      id: "00000000-0000-4000-8000-000000000001",
+      email: "patient@example.test",
+      role: "PATIENT",
+    });
+  });
+  assert.equal((await authRequest("me")).role, "PATIENT");
 });
 
 test("API errors preserve status and message", async (context) => {
