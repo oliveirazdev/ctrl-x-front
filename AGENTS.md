@@ -24,6 +24,13 @@ Build an accessible, patient-first, responsive health-tracking web application w
 - Finish each task with changed files, commands executed, test results and known gaps.
 - Do not generate the whole product in one pass; work on one milestone per prompt.
 
+## Git and release workflow
+- Before editing, check `git status --short --branch`. Preserve existing user changes; stop if they conflict with the task.
+- Start work from an up-to-date `develop` using fast-forward only, then create `feature/<english-kebab-case>`. Do not work directly on `develop` or `prod`.
+- Send feature changes to `develop` through a pull request. Promote to `prod` only through a pull request from `develop`.
+- Do not create commits, push, merge, deploy, or change external GitHub/Vercel settings unless explicitly requested.
+- Keep secrets and credentials out of tracked files. Preserve `.env.local` and other local environment files.
+
 ## Frontend interface design
 - Before starting any frontend task, locate and read `~/.agents/skills/interface-design/SKILL.md` and the relevant references. Follow the skill's guidelines, standards, and workflows for pages, components, layouts, dashboards, forms, responsive behavior, and visual refactoring. Do not make visual changes before consulting the skill.
 - Prioritize modern, professional, consistent, intuitive interfaces with clear visual hierarchy, spacing, typography, contrast, and alignment. Keep components, colors, states, and interaction patterns consistent. Account for accessibility, responsiveness, and user experience, and avoid generic, inconsistent, or improvised interfaces.
