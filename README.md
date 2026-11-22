@@ -48,11 +48,11 @@ npm start
 
 Para autenticação, configure `NEXT_PUBLIC_API_URL` com a URL pública da API incluindo `/api/v1` e reinicie ou reconstrua o frontend. Configure `CORS_ORIGINS` do backend com a origem exata do frontend. O cookie SameSite=Lax exige frontend e API no mesmo site em produção. O cadastro não inicia sessão e encaminha para login. O backend não disponibiliza logout ou renovação de sessão; a sessão expira em 15 minutos.
 
-Configure `NEXT_PUBLIC_API_BASE_URL` em `.env.local`, inicialmente `http://localhost:8000/api/v1`.
 Variáveis `NEXT_PUBLIC_*` são públicas e devem conter somente configuração pública.
 
-O indicador de API consulta `GET /health` no backend configurado em `NEXT_PUBLIC_API_BASE_URL`,
-com validação Zod de `{"status":"ok"}`. A API precisa permitir CORS para a origem do frontend.
+A autenticação, os serviços e o indicador de API usam a mesma `NEXT_PUBLIC_API_URL`.
+O indicador consulta `GET /health` no host dessa URL, com validação Zod de `{"status":"ok"}`.
+A API precisa permitir CORS para a origem do frontend.
 A interface apresenta carregamento, disponibilidade, falha e um botão para repetir a consulta.
 O endpoint local `/api/health` mede somente a disponibilidade do frontend Next.js e não depende
 do backend.
