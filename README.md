@@ -48,7 +48,7 @@ npm start
 
 ## Conexão com o backend
 
-Para autenticação, configure `NEXT_PUBLIC_API_URL` com a URL pública da API incluindo `/api/v1` e reinicie ou reconstrua o frontend. Configure `CORS_ORIGINS` do backend com a origem exata do frontend. O cookie SameSite=Lax exige frontend e API no mesmo site em produção. O cadastro não inicia sessão e encaminha para login. O backend não disponibiliza logout ou renovação de sessão; a sessão expira em 15 minutos.
+Para autenticação, configure `NEXT_PUBLIC_API_URL` com a URL pública da API incluindo `/api/v1` e reinicie ou reconstrua o frontend. Configure `CORS_ORIGINS` do backend com a origem exata do frontend. O backend usa cookie `SameSite=None; Secure` fora de development para permitir chamadas cross-site; se o navegador bloquear cookies de terceiros, use domínios próprios no mesmo site ou proxy de mesma origem. O cadastro não inicia sessão e encaminha para login. A sessão expira em 15 minutos.
 
 
 Variáveis `NEXT_PUBLIC_*` são públicas e devem conter somente configuração pública.

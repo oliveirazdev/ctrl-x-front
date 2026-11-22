@@ -31,7 +31,7 @@ A concorrência serializa os deployments sem cancelar uma publicação em andame
 
 Confira o ORG ID em Team Settings → General ou no `orgId` de `.vercel/project.json` obtido ao vincular o projeto correto. Nunca coloque tokens em NEXT_PUBLIC, arquivos versionados ou logs. O token só é injetado nos steps da CLI.
 
-O domínio canônico aparece em Domains no projeto Vercel. As URLs da API devem ser reais; não invente um endereço Railway. O deploy agora não valida nem testa a API: sua conclusão não comprova que login ou funções clínicas funcionam. O backend precisa estar disponível, aceitar a origem frontend via CORS e ter uma estratégia de domínio compatível com o cookie SameSite=Lax. Mudanças em NEXT_PUBLIC exigem novo build.
+O domínio canônico aparece em Domains no projeto Vercel. As URLs da API devem ser reais; não invente um endereço Railway. O deploy agora não valida nem testa a API: sua conclusão não comprova que login ou funções clínicas funcionam. O backend precisa estar disponível e aceitar a origem frontend via CORS. O cookie cross-site usa `SameSite=None; Secure`; se o navegador bloquear cookies de terceiros, configure domínios próprios no mesmo site ou proxy de mesma origem. Mudanças em NEXT_PUBLIC exigem novo build.
 
 ## Proteções e auto-merge
 
