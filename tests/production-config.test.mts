@@ -28,15 +28,15 @@ for (const [value, expected] of invalidUrls) {
 
 test("frontend health route returns uncached local health without API configuration", async () => {
   const { GET } = await import("../src/app/api/health/route.ts");
-  const previous = process.env.NEXT_PUBLIC_API_BASE_URL;
-  delete process.env.NEXT_PUBLIC_API_BASE_URL;
+  const previous = process.env.NEXT_PUBLIC_API_URL;
+  delete process.env.NEXT_PUBLIC_API_URL;
   try {
     const response = GET();
     assert.equal(response.status, 200);
     assert.deepEqual(await response.json(), { status: "ok" });
     assert.equal(response.headers.get("cache-control"), "no-store");
   } finally {
-    if (previous === undefined) delete process.env.NEXT_PUBLIC_API_BASE_URL;
-    else process.env.NEXT_PUBLIC_API_BASE_URL = previous;
+    if (previous === undefined) delete process.env.NEXT_PUBLIC_API_URL;
+    else process.env.NEXT_PUBLIC_API_URL = previous;
   }
 });
