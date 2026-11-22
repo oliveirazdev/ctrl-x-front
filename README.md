@@ -20,17 +20,19 @@ Use uma versão atualizada do Node.js 22 e npm, conforme o package.json e o CI.
 
 O processo de release e a configuração do GitHub Actions estão em [CI-CD.md](CI-CD.md).
 
+Antes de iniciar, crie `.env.local` se ainda não existir e configure `NEXT_PUBLIC_API_URL` para a API local (por exemplo, `http://localhost:8000/api/v1`). Preserve o arquivo e os valores locais existentes.
+
 ```powershell
 npm ci
-Copy-Item .env.example .env.local
 npm run dev
 ```
 
-Abra http://localhost:3000. Em uma instalação já configurada, preserve seu `.env.local`.
+Abra http://localhost:3000.
 
 ```powershell
 npm run lint
 npm run typecheck
+npm test
 npm run build
 npm start
 ```
